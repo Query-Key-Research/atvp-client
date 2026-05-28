@@ -1,0 +1,34 @@
+name: 'Record ATVP Fix Result'
+description: 'Record the outcome of a fix application to the QueryKey Cases ATVP ledger'
+author: 'QueryKey'
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  api_key:
+    description: 'QueryKey API key'
+    required: true
+  case_id:
+    description: 'The ATVP case ID to record feedback for'
+    required: true
+  result:
+    description: 'Outcome of the fix application: success, failure, partial, or rolled_back'
+    required: true
+    default: 'success'
+  notes:
+    description: 'Optional human-readable notes about the outcome'
+    required: false
+    default: ''
+  evidence_command:
+    description: 'Shell command to run for structured evidence (e.g. "bash scripts/check.sh")'
+    required: false
+    default: ''
+  querykey_base_url:
+    description: 'QueryKey API base URL'
+    required: false
+    default: 'https://www.querykey.com'
+
+runs:
+  using: 'node20'
+  main: 'entrypoint.mjs'

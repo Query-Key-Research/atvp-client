@@ -1,0 +1,36 @@
+{
+  "name": "@querykey/atvp-client",
+  "version": "0.1.0",
+  "description": "Official Node.js client for the Automated Trust and Verification Protocol (ATVP)",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "eslint src/ test/",
+    "check": "npm run lint && npm test"
+  },
+  "keywords": [
+    "atvp",
+    "trust",
+    "verification",
+    "querykey",
+    "cases",
+    "ledger",
+    "protocol"
+  ],
+  "author": "QueryKey Engineering <engineering@querykey.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/querykey/atvp-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/querykey/atvp-client/issues"
+  },
+  "homepage": "https://atvp.dev",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
