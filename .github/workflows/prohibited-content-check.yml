@@ -1,0 +1,18 @@
+name: Prohibited Content Check
+on: [pull_request, push]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block ATP technical blueprints in docs only
+        run: |
+          set -euo pipefail
+          # Exclude README.md and generated docs
+          md_files=$(git ls-files '*.md' | grep -v '^README.md$' | grep -v '/generated/' || true)
+          # More specific patterns - target actual algorithm details, not API descriptions
+          banned='(target[ _-]?difficulty[ _-]?value|work[ _-]?factor[ _-]?calculation|scoring[ _-]?weight[ _-]?formula|penalty[ _-]?multiplier|proof[ _-]?of[ _-]?work[ _-]?algorithm|sha-?256[ _-]?target[ _-]?bits)'
+          if [ -n "$md_files" ] && grep -R -n -i -E "$banned" -- $md_files ; then
+            echo "::error::Docs must not reveal ATP technical blueprint (algorithms, targets, scoring, penalties)."
+            exit 1
+          fi
