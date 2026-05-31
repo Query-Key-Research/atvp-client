@@ -1,5 +1,5 @@
 {
-  "name": "@querykey/atvp-client",
+  "name": "@querykey-research/atvp-client",
   "version": "0.1.0",
   "description": "Official Node.js client for the Automated Trust and Verification Protocol (ATVP)",
   "main": "src/index.js",
