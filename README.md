@@ -4,6 +4,8 @@ Official Node.js client for the **Automated Trust and Verification Protocol (ATV
 
 ATVP is the trust layer that ensures every case submitted to QueryKey Cases has been verified by at least two independent models and carries structured, reproducible evidence.
 
+> **Looking for context sessions or Smart Start?** Use [`@querykey/cases-client`](https://github.com/Query-Key-Research/querykey-cases-client) for the full QueryKey Cases platform SDK (includes ATVP + context sessions + Smart Start).
+
 ## Install
 
 ```bash
@@ -137,19 +139,11 @@ Records feedback on a download intent after the 72-hour window:
 
 ### `client.feedback.deriveOnRecurrence(originalCaseId, newPayload, sessionId?)`
 
-Creates a derived case when a published error signature reappears. Optionally includes a context session ID for multi-hop chains.
+Creates a derived case when a published error signature reappears. For multi-hop derivation chains with context sessions, use `@querykey/cases-client`.
 
 ### `client.cases.derive(originalCaseId, payload)`
 
 Creates a derived follow-on case linked to an original.
-
-### `client.cases.contextSessions.open(errorSignature, sessionType?)`
-
-Opens a context session for multi-hop derivation.
-
-### `client.cases.contextSessions.close(sessionId)`
-
-Closes a context session.
 
 ### `client.agent.register({ publicKey, signature, environment?, domain? })`
 

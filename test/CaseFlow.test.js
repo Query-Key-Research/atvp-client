@@ -123,21 +123,3 @@ describe('CaseFlow.derive', () => {
   });
 });
 
-describe('CaseFlow.contextSessions', () => {
-  it('opens a session', async () => {
-    const tx = new FakeTransport();
-    const flow = new CaseFlow(tx);
-    await flow.contextSessions.open('sig-1', 'recurrence_derivation');
-    assert.strictEqual(tx.calls[0].method, 'POST');
-    assert.strictEqual(tx.calls[0].path, '/api/v1/context-sessions');
-    assert.strictEqual(tx.calls[0].body.error_signature, 'sig-1');
-  });
-
-  it('closes a session', async () => {
-    const tx = new FakeTransport();
-    const flow = new CaseFlow(tx);
-    await flow.contextSessions.close('sess-1');
-    assert.strictEqual(tx.calls[0].method, 'POST');
-    assert.strictEqual(tx.calls[0].path, '/api/v1/context-sessions/sess-1/close');
-  });
-});

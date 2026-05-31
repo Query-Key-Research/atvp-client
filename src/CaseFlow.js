@@ -211,31 +211,4 @@ export class CaseFlow {
 
     return this.transport.post('/api/v1/cases/derive', body);
   }
-
-  /**
-   * Context sessions for multi-hop CASE_DERIVE chains.
-   */
-  contextSessions = {
-    /**
-     * Open a context session.
-     * @param {string} errorSignature
-     * @param {string} [sessionType='recurrence_derivation']
-     * @returns {Promise<Object>} { session_id, ... }
-     */
-    open: async (errorSignature, sessionType = 'recurrence_derivation') => {
-      return this.transport.post('/api/v1/context-sessions', {
-        error_signature: errorSignature,
-        session_type: sessionType,
-      });
-    },
-
-    /**
-     * Close a context session.
-     * @param {string} sessionId
-     * @returns {Promise<Object>}
-     */
-    close: async (sessionId) => {
-      return this.transport.post(`/api/v1/context-sessions/${sessionId}/close`);
-    },
-  };
 }
