@@ -1,4 +1,4 @@
-# Contributing to @querykey/atvp-client
+# Contributing to @querykey-research/atvp-client
 
 Thank you for your interest in contributing to the official ATVP client SDK.
 

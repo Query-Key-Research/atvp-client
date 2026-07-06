@@ -1,4 +1,4 @@
-# @querykey/atvp-client
+# @querykey-research/atvp-client
 
 Official Node.js client for the **Automated Trust and Verification Protocol (ATVP)**.
 
@@ -9,13 +9,13 @@ ATVP is the trust layer that ensures every case submitted to QueryKey Cases has 
 ## Install
 
 ```bash
-npm install @querykey/atvp-client
+npm install @querykey-research/atvp-client
 ```
 
 ## Quick Start
 
 ```js
-import { AtvpClient } from '@querykey/atvp-client';
+import { AtvpClient } from '@querykey-research/atvp-client';
 
 const client = new AtvpClient({
   apiKey: process.env.QUERYKEY_API_KEY,
@@ -93,49 +93,25 @@ Publishes a case. `evidence` must be an object with:
 
 Boolean flags are **rejected**. `exitCode` must be exactly `0`.
 
-### `client.cases.feedback(caseId, { feedback_type, outcome, reasoning })`
-
-Records feedback (REFUTE, ROLLBACK, etc.).
-
-### `client.feedback.recordApplicationResult(caseId, result, notes?, evidence?)`
-
-Closes the feedback loop by recording whether a fix succeeded or failed after deployment.
-
-`result` must be one of: `'success'`, `'failure'`, `'partial'`, `'rolled_back'`.
-
-```js
-// After staging deploy passes
-await client.feedback.recordApplicationResult(
-  caseId,
-  'success',
-  'Smoke tests passed on staging',
-  { command: 'bash scripts/check.sh', exitCode: 0, output: 'PASS' }
-);
-
-// After production rollback
-await client.feedback.recordApplicationResult(
-  caseId,
-  'rolled_back',
-  'Fix caused regression in billing service — reverted in hotfix #4821'
-);
-```
-
-### `client.feedback.confirmCase(caseId, evidence, notes?)`
-
-Shortcut for `recordApplicationResult(caseId, 'success', notes, evidence)`.
-
-### `client.feedback.refuteCase(caseId, reasoning)`
-
-Shortcut for `recordApplicationResult(caseId, 'failure', reasoning)`.
-
-### `client.feedback.recordRollback(caseId, reasoning?)`
-
-Shortcut for `recordApplicationResult(caseId, 'rolled_back', reasoning)`.
-
 ### `client.feedback.recordDownloadFeedback(intentId, outcome, notes?)`
 
-Records feedback on a download intent after the 72-hour window:
+Records post-application feedback. In ATVP, application feedback is keyed to a
+**download intent**: an actor downloads a published case (creating an intent),
+applies the fix, and reports the outcome against that intent — this is what
+drives the downloader's reputation. There is no bare per-case feedback endpoint;
+positive verification at publish time goes through `client.cases.confirm()` with
+evidence.
+
 - `outcome`: `'confirm'` | `'refute'` | `'non_responsive'`
+
+```js
+// After applying a downloaded fix and verifying it
+await client.feedback.recordDownloadFeedback(
+  intentId,
+  'confirm',
+  'Smoke tests passed on staging'
+);
+```
 
 ### `client.feedback.deriveOnRecurrence(originalCaseId, newPayload, sessionId?)`
 
@@ -166,7 +142,7 @@ Runs a shell command and returns an evidence object `{ command, exitCode, output
 All SDK methods throw `AtvpError` on failure:
 
 ```js
-import { AtvpError } from '@querykey/atvp-client';
+import { AtvpError } from '@querykey-research/atvp-client';
 
 try {
   await client.cases.confirm(caseId, badEvidence);

@@ -9,19 +9,15 @@ inputs:
   api_key:
     description: 'QueryKey API key'
     required: true
-  case_id:
-    description: 'The ATVP case ID to record feedback for'
+  intent_id:
+    description: 'The ATVP download intent ID created when the case was downloaded for application'
     required: true
-  result:
-    description: 'Outcome of the fix application: success, failure, partial, or rolled_back'
+  outcome:
+    description: 'Outcome of the fix application: confirm (worked), refute (failed), derive (needed changes), or rollback (had to revert)'
     required: true
-    default: 'success'
+    default: 'confirm'
   notes:
     description: 'Optional human-readable notes about the outcome'
-    required: false
-    default: ''
-  evidence_command:
-    description: 'Shell command to run for structured evidence (e.g. "bash scripts/check.sh")'
     required: false
     default: ''
   querykey_base_url:

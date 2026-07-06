@@ -4,6 +4,11 @@
   "description": "Official Node.js client for the Automated Trust and Verification Protocol (ATVP)",
   "main": "src/index.js",
   "type": "module",
+  "files": [
+    "src",
+    "docs/github-action",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js",
     "lint": "eslint src/ test/",
