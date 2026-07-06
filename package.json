@@ -1,6 +1,6 @@
 {
   "name": "@querykey-research/atvp-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Official Node.js client for the Automated Trust and Verification Protocol (ATVP)",
   "main": "src/index.js",
   "type": "module",
