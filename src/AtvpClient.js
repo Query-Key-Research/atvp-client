@@ -4,7 +4,7 @@
  * Composes HttpTransport, AgentRegistration, CaseFlow, EvidenceGate, and FeedbackLoop.
  *
  * Usage:
- *   import { AtvpClient } from '@querykey/atvp-client';
+ *   import { AtvpClient } from '@querykey-research/atvp-client';
  *   const client = new AtvpClient({ apiKey, baseUrl });
  *   const { caseId } = await client.submitVerifiedFix({ ... });
  */

@@ -38,7 +38,10 @@ export class CaseFlow {
     if (!payload.title) throw new AtvpError('title is required', { step: 'create' });
     if (!payload.error_signature) throw new AtvpError('error_signature is required', { step: 'create' });
 
+    // Spread caller-provided fields first so the explicit keys below always win
+    // (prevents an absent payload.body from clobbering the computed default).
     const body = {
+      ...payload,
       title: payload.title,
       summary: payload.summary ?? payload.title,
       body: payload.body ?? {
@@ -47,9 +50,10 @@ export class CaseFlow {
         error_signature: payload.error_signature,
         ecosystem: payload.ecosystem ?? 'unknown',
         root_cause: payload.root_cause ?? '',
-        context_tags: payload.context_tags ?? { environments: ['production'], domains: ['cases-api'] },
+        metadata: {
+          context_tags: payload.context_tags ?? { environments: ['production'], domains: ['cases-api'] },
+        },
       },
-      ...payload,
     };
 
     return this.transport.post('/api/v1/cases', body);
@@ -162,32 +166,6 @@ export class CaseFlow {
       published: confirmed.published ?? true,
       case: confirmed,
     };
-  }
-
-  /**
-   * Feedback — record a REFUTE, ROLLBACK, or other feedback outcome.
-   *
-   * @param {string} caseId
-   * @param {Object} feedback
-   * @param {string} feedback.feedback_type   — 'REFUTE', 'CONFIRM', 'ROLLBACK'
-   * @param {string} feedback.outcome         — FEEDBACK_OUTCOME value
-   * @param {string} feedback.reasoning       — human-readable reasoning
-   * @param {string} [feedback.ownership]     — FEEDBACK_OWNERSHIP value
-   * @returns {Promise<Object>} feedback record
-   */
-  async feedback(caseId, { feedback_type, outcome, reasoning, ownership = 'FEEDBACK_OWNERSHIP' }) {
-    if (!caseId) throw new AtvpError('caseId is required', { step: 'feedback' });
-    if (!feedback_type) throw new AtvpError('feedback_type is required', { step: 'feedback' });
-
-    const body = {
-      case_id: caseId,
-      feedback_type,
-      outcome: outcome ?? 'FEEDBACK_OUTCOME',
-      reasoning: reasoning ?? '',
-      ownership,
-    };
-
-    return this.transport.post(`/api/v1/cases/${caseId}/feedback`, body);
   }
 
   /**

@@ -2,33 +2,19 @@
  * @file FeedbackLoop.js
  * @description Closes the ATVP feedback loop.
  *
- * After a fix is applied (e.g. deployed to staging or production), the agent
- * reports back whether the application succeeded or failed. This updates
- * the case verification state, the trust ledger, and optionally triggers
- * reputation adjustments.
+ * Application-outcome feedback in ATVP is keyed to a download intent: an agent
+ * downloads a published case (creating an intent), applies the fix, and reports
+ * the outcome back against that intent. Reputation flows from that linkage, so
+ * feedback is recorded via the download-intent endpoint — not against a bare
+ * case id. Positive verification at publication time goes through
+ * CaseFlow.confirm() (POST /cases/:id/confirm) with structured evidence.
  *
- * High-level helpers:
- *   recordApplicationResult(caseId, 'success', notes?)
- *   recordApplicationResult(caseId, 'failure', notes?)
- *
- * Low-level helpers:
- *   confirmCase(caseId, evidence)     — positive verification
- *   refuteCase(caseId, reasoning)     — negative verification
- *   deriveOnRecurrence(originalCaseId, newPayload) — recurrence chain
+ * Helpers:
+ *   recordDownloadFeedback(intentId, outcome, notes?) — close a download intent
+ *   deriveOnRecurrence(originalCaseId, newPayload, sessionId?) — recurrence chain
  */
 
 import { AtvpError } from './HttpTransport.js';
-import { EvidenceGate } from './EvidenceGate.js';
-
-/**
- * Feedback outcomes supported by the ATVP protocol.
- */
-export const ApplicationOutcome = Object.freeze({
-  SUCCESS: 'success',
-  FAILURE: 'failure',
-  PARTIAL: 'partial',
-  ROLLED_BACK: 'rolled_back',
-});
 
 /**
  * Manages the feedback loop: applying results back to the Cases ledger.
@@ -42,99 +28,24 @@ export class FeedbackLoop {
   }
 
   /**
-   * Record the result of applying a fix to a case.
-   * This is the primary method for closing the feedback loop.
-   *
-   * @param {string} caseId
-   * @param {string} result        — 'success' | 'failure' | 'partial' | 'rolled_back'
-   * @param {string} [notes]       — human-readable notes about the outcome
-   * @param {Object} [evidence]    — optional evidence for success confirmations
-   * @returns {Promise<Object>} feedback record
-   */
-  async recordApplicationResult(caseId, result, notes = '', evidence = undefined) {
-    if (!caseId) throw new AtvpError('caseId is required', { step: 'feedback' });
-    if (!Object.values(ApplicationOutcome).includes(result)) {
-      throw new AtvpError(
-        `Invalid result "${result}". Must be one of: ${Object.values(ApplicationOutcome).join(', ')}`,
-        { step: 'feedback' }
-      );
-    }
-
-    const outcomeMap = {
-      [ApplicationOutcome.SUCCESS]:    { feedback_type: 'CONFIRM',  outcome: 'FEEDBACK_OUTCOME' },
-      [ApplicationOutcome.FAILURE]:      { feedback_type: 'REFUTE',   outcome: 'FEEDBACK_OUTCOME' },
-      [ApplicationOutcome.PARTIAL]:      { feedback_type: 'REFUTE',   outcome: 'FEEDBACK_OUTCOME' },
-      [ApplicationOutcome.ROLLED_BACK]:  { feedback_type: 'ROLLBACK', outcome: 'FEEDBACK_OUTCOME' },
-    };
-
-    const mapped = outcomeMap[result];
-
-    // For success, require evidence if provided; skip if not (trusts caller)
-    if (result === ApplicationOutcome.SUCCESS && evidence !== undefined) {
-      EvidenceGate.validate(evidence);
-    }
-
-    const body = {
-      case_id: caseId,
-      feedback_type: mapped.feedback_type,
-      outcome: mapped.outcome,
-      reasoning: notes || `${result} — fix application recorded`,
-      ownership: 'FEEDBACK_OWNERSHIP',
-      ...(evidence ? { evidence } : {}),
-    };
-
-    return this.transport.post(`/api/v1/cases/${caseId}/feedback`, body);
-  }
-
-  /**
-   * Confirm a case with structured evidence after a successful fix application.
-   * Shortcut for recordApplicationResult with success + evidence.
-   *
-   * @param {string} caseId
-   * @param {Object} evidence   — { command, exitCode: 0, output }
-   * @param {string} [notes]
-   * @returns {Promise<Object>}
-   */
-  async confirmCase(caseId, evidence, notes = '') {
-    return this.recordApplicationResult(caseId, ApplicationOutcome.SUCCESS, notes, evidence);
-  }
-
-  /**
-   * Refute a case when a fix fails.
-   * Shortcut for recordApplicationResult with failure.
-   *
-   * @param {string} caseId
-   * @param {string} reasoning  — why the fix failed
-   * @returns {Promise<Object>}
-   */
-  async refuteCase(caseId, reasoning) {
-    return this.recordApplicationResult(caseId, ApplicationOutcome.FAILURE, reasoning);
-  }
-
-  /**
-   * Record that a fix was rolled back.
-   *
-   * @param {string} caseId
-   * @param {string} [reasoning]
-   * @returns {Promise<Object>}
-   */
-  async recordRollback(caseId, reasoning = 'Fix rolled back') {
-    return this.recordApplicationResult(caseId, ApplicationOutcome.ROLLED_BACK, reasoning);
-  }
-
-  /**
    * Download intent feedback — record the outcome after a case is downloaded
-   * and the 72-hour feedback window expires or is fulfilled early.
+   * and applied. This is the canonical ATVP application-feedback channel; the
+   * outcome drives the downloader's reputation.
+   *
+   * "non_responsive" is intentionally not a valid input here: the server
+   * detects that state automatically when a download intent's deadline
+   * passes with no feedback at all (see applyNonResponsePenalty on the
+   * Cases API) — it is not something a caller reports proactively.
    *
    * @param {string} intentId   — download intent ID
-   * @param {string} outcome    — 'confirm' | 'refute' | 'non_responsive'
+   * @param {string} outcome    — 'confirm' | 'refute' | 'derive' | 'rollback'
    * @param {string} [notes]
    * @returns {Promise<Object>}
    */
   async recordDownloadFeedback(intentId, outcome, notes = '') {
     if (!intentId) throw new AtvpError('intentId is required', { step: 'feedback' });
 
-    const validOutcomes = ['confirm', 'refute', 'non_responsive'];
+    const validOutcomes = ['confirm', 'refute', 'derive', 'rollback'];
     if (!validOutcomes.includes(outcome)) {
       throw new AtvpError(
         `Invalid outcome "${outcome}". Must be one of: ${validOutcomes.join(', ')}`,
